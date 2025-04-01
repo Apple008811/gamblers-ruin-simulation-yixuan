@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
 import requests
 from matplotlib.colors import LinearSegmentedColormap
 
@@ -119,14 +120,26 @@ def show_introduction():
             st.write(f"Transition Matrix after {power} steps:")
             st.write(P_n)
 
-        # Add matrix visualization
-        fig_matrix, ax_matrix = plt.subplots(figsize=(4, 3))
-        im = ax_matrix.imshow(P, cmap=custom_cmap)
-        plt.colorbar(im)
-        ax_matrix.set_title("Transition Matrix Heatmap")
-        ax_matrix.set_xlabel("To State")
-        ax_matrix.set_ylabel("From State")
-        st.pyplot(fig_matrix)
+        # Replace matplotlib heatmap with Plotly heatmap
+        fig_matrix = go.Figure(data=go.Heatmap(
+            z=P,
+            colorscale='RdBu',
+            zmid=0,
+            text=np.round(P, 2),
+            texttemplate='%{text}',
+            textfont={"size": 10},
+            hoverongaps=False,
+            showscale=True,
+            colorbar=dict(title='Probability')
+        ))
+        fig_matrix.update_layout(
+            title="Transition Matrix Heatmap",
+            xaxis_title="To State",
+            yaxis_title="From State",
+            height=400,
+            width=600
+        )
+        st.plotly_chart(fig_matrix, use_container_width=True)
 
     with tab3:
         st.header("Interactive Demo (without loan)")
@@ -146,7 +159,7 @@ def show_introduction():
             
         st.write(f"Probability of Ruin: {ruin_prob:.2%}")
         
-        # Visualization
+        # Calculate fortunes and ruin probabilities for the plot
         fortunes = np.arange(1, target_fortune + 1)
         ruin_probs = []
         for n in fortunes:
@@ -154,14 +167,25 @@ def show_introduction():
                 ruin_probs.append((1 - (win_prob/(1-win_prob))**n)/(1 - (win_prob/(1-win_prob))**target_fortune))
             else:
                 ruin_probs.append(n/target_fortune)
-                
-        fig, ax = plt.subplots(figsize=(4, 3))
-        ax.plot(fortunes, ruin_probs, color=colors[0])
-        ax.set_xlabel("Initial Fortune ($)")
-        ax.set_ylabel("Probability of Ruin")
-        ax.set_title("Ruin Probability vs Initial Fortune")
-        ax.grid(True)
-        st.pyplot(fig)
+        
+        # Replace matplotlib line plot with Plotly
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=fortunes,
+            y=ruin_probs,
+            mode='lines',
+            name='Ruin Probability',
+            line=dict(color=colors[0])
+        ))
+        fig.update_layout(
+            title="Ruin Probability vs Initial Fortune",
+            xaxis_title="Initial Fortune ($)",
+            yaxis_title="Probability of Ruin",
+            height=400,
+            width=600,
+            showlegend=True
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
         # Add simulation feature
         if st.button("Run Simulation", key="sim_button"):
@@ -186,15 +210,24 @@ def show_introduction():
                 win_rate = wins / num_simulations
                 st.success(f"Simulation completed! Win Rate: {win_rate:.2%}")
                 
-                # Plot sample paths
-                fig_paths, ax_paths = plt.subplots(figsize=(4, 3))
+                # Replace matplotlib sample paths plot with Plotly
+                fig_paths = go.Figure()
                 for i in range(min(10, len(paths))):
-                    ax_paths.plot(paths[i], alpha=0.5, color=colors[i % len(colors)])
-                ax_paths.set_xlabel("Steps")
-                ax_paths.set_ylabel("Fortune ($)")
-                ax_paths.set_title("Sample Paths")
-                ax_paths.grid(True)
-                st.pyplot(fig_paths)
+                    fig_paths.add_trace(go.Scatter(
+                        y=paths[i],
+                        mode='lines',
+                        name=f'Path {i+1}',
+                        line=dict(color=colors[i % len(colors)], width=1)
+                    ))
+                fig_paths.update_layout(
+                    title="Sample Paths",
+                    xaxis_title="Steps",
+                    yaxis_title="Fortune ($)",
+                    height=400,
+                    width=600,
+                    showlegend=True
+                )
+                st.plotly_chart(fig_paths, use_container_width=True)
 
     with tab4:
         st.header("Interactive Demo (with loan)")
@@ -230,23 +263,24 @@ def show_introduction():
         else:
             st.write("Strategy: Neutral - Game is fair, but house edge may apply")
 
-        # Loan scenario visualization
-        fig_loan, ax_loan = plt.subplots()
-        credit_limits = np.arange(0, credit_limit + 50, 10)
-        ruin_probs_loan = []
-        for cl in credit_limits:
-            total_cap = initial_fortune_loan + cl
-            if win_prob_loan != 0.5:
-                ruin_probs_loan.append((1 - (win_prob_loan/(1-win_prob_loan))**total_cap)/(1 - (win_prob_loan/(1-win_prob_loan))**target_fortune_loan))
-            else:
-                ruin_probs_loan.append(total_cap/target_fortune_loan)
-        
-        ax_loan.plot(credit_limits, ruin_probs_loan)
-        ax_loan.set_xlabel("Credit Limit ($)")
-        ax_loan.set_ylabel("Probability of Ruin")
-        ax_loan.set_title("Ruin Probability vs Credit Limit")
-        ax_loan.grid(True)
-        st.pyplot(fig_loan)
+        # Replace matplotlib loan scenario plot with Plotly
+        fig_loan = go.Figure()
+        fig_loan.add_trace(go.Scatter(
+            x=credit_limits,
+            y=ruin_probs_loan,
+            mode='lines',
+            name='Ruin Probability',
+            line=dict(color=colors[0])
+        ))
+        fig_loan.update_layout(
+            title="Ruin Probability vs Credit Limit",
+            xaxis_title="Credit Limit ($)",
+            yaxis_title="Probability of Ruin",
+            height=400,
+            width=600,
+            showlegend=True
+        )
+        st.plotly_chart(fig_loan, use_container_width=True)
 
     with tab5:
         st.header("API Demo")
