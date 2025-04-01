@@ -20,6 +20,8 @@ cd [repository-name]
 
 2. Install the required packages:
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -27,7 +29,7 @@ pip install -r requirements.txt
 
 Run the Streamlit app with:
 ```bash
-streamlit run 1_introduction.py
+streamlit run pages/1_introduction.py
 ```
 
 The application will open in your default web browser.
